@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Stats.Data.ComponentByDate">
+<Description>
+Stats. Messages sent/received by component each day.</Description>
+<Super>%Persistent,Common</Super>
+<TimeCreated>63446,61008.755961</TimeCreated>
+
+<Parameter name="SrcVer">
+<Description>
+Location and Revision of this file in Perforce (Auto-updating)</Description>
+<Default>$Id$</Default>
+</Parameter>
+
+<Index name="Key">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>Namespace,SDate,Component</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Index name="SDateIdx">
+<Properties>SDate</Properties>
+</Index>
+
+<Property name="Namespace">
+<Type>%String</Type>
+<SqlColumnNumber>2</SqlColumnNumber>
+<Parameter name="MAXLEN" value="1024"/>
+</Property>
+
+<Property name="SDate">
+<Type>%Date</Type>
+<SqlColumnNumber>3</SqlColumnNumber>
+</Property>
+
+<Property name="Component">
+<Type>%String</Type>
+<SqlColumnNumber>4</SqlColumnNumber>
+<Parameter name="MAXLEN" value="1024"/>
+</Property>
+
+<Property name="Sent">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Received">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Total">
+<Type>%Integer</Type>
+</Property>
+
+<Method name="Calculate">
+<Description>
+Calculate stats for a given date</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pDate:%Date</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ret = $$$OK
+	try {
+		set dateBegin = $zdate(pDate,3)
+		set dateEnd = $zdate(pDate+1,3)
+		set (comp, sent, received) = ""
+		
+		// sent messages
+		&sql(
+		DECLARE C1 CURSOR FOR
+		SELECT SourceConfigName, count(*) Num 
+		INTO :comp, :sent
+		FROM Ens.MessageHeader
+		WHERE TimeCreated >= :dateBegin AND TimeCreated < :dateEnd
+		GROUP BY SourceConfigName
+		)
+		&sql(OPEN C1)
+		for {
+			&sql(FETCH C1)
+			quit:(SQLCODE'=0)
+			$$$THROWONERROR(tSC, ..AddStat($namespace, pDate, comp, sent,))
+		}
+		&sql(CLOSE C1)		
+		
+		// received messages
+		&sql(
+		DECLARE C2 CURSOR FOR
+		SELECT TargetConfigName, count(*) Num 
+		INTO :comp, :received
+		FROM Ens.MessageHeader
+		WHERE TimeCreated >= :dateBegin AND TimeCreated < :dateEnd
+		GROUP BY TargetConfigName
+		)
+		&sql(OPEN C2)
+		for {
+			&sql(FETCH C2)
+			quit:(SQLCODE'=0)
+			$$$THROWONERROR(tSC, ..AddStat($namespace, pDate, comp, ,received))
+		}
+		&sql(CLOSE C2)
+		
+	} catch ex {
+		set ret = ex.AsStatus()
+	}
+	quit ret
+]]></Implementation>
+</Method>
+
+<Method name="AddStat">
+<Description>
+Add a new stat to the persistent class</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pNamespace:%String="",pDate:%Date="",pComp:%String="",pSent:%String="",pRec:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ret = $$$OK
+	try {
+		set obj = ..KeyOpen(pNamespace, pDate, pComp)
+		if '$isobject(obj) {
+			set obj = ..%New()
+			set obj.Namespace = pNamespace
+			set obj.SDate = pDate
+			set obj.Component = pComp
+		}
+		
+		if pSent'="" set obj.Sent = pSent
+		if pRec'="" set obj.Received = pRec
+		set obj.Total = obj.Sent + obj.Received
+		
+		$$$THROWONERROR(tSC, obj.%Save())
+	} catch ex {
+		set ret = ex.AsStatus()
+	}
+	quit ret
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^Stats.Data.ComponentByDateD</DataLocation>
+<DefaultData>ComponentByDateDefaultData</DefaultData>
+<IdLocation>^Stats.Data.ComponentByDateD</IdLocation>
+<IndexLocation>^Stats.Data.ComponentByDateI</IndexLocation>
+<StreamLocation>^Stats.Data.ComponentByDateS</StreamLocation>
+<ExtentSize>100000</ExtentSize>
+<Data name="ComponentByDateDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Sent</Value>
+</Value>
+<Value name="3">
+<Value>Received</Value>
+</Value>
+<Value name="4">
+<Value>Total</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

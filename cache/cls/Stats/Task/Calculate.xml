@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Stats.Task.Calculate">
+<Description>
+System task to calculate Ensemble stats.</Description>
+<Super>%SYS.Task.Definition</Super>
+<TimeCreated>63446,69405.23614</TimeCreated>
+
+<Parameter name="SrcVer">
+<Description>
+Location and Revision of this file in Perforce (Auto-updating)</Description>
+<Default>$Id$</Default>
+</Parameter>
+
+<Parameter name="TaskName">
+<Default>Stats.Task.Calculate</Default>
+</Parameter>
+
+<Property name="NamespaceList">
+<Description>
+Comma separated list of namespaces to calculate stats.</Description>
+<Type>%String</Type>
+<InitialExpression>"ENSDEMO"</InitialExpression>
+<Parameter name="MAXLEN" value="1024"/>
+</Property>
+
+<Method name="OnTask">
+<Description>
+The OnTask() method is called to execute the task</Description>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ret = $$$OK
+	set current = $namespace
+	try {
+		do ..Log("=====================================")
+		do ..Log("*Stats Begin")
+		for i=1:1:$l(..NamespaceList,",") {
+			set ns = $piece(..NamespaceList,",",i)
+			
+			do ..Log("Namespace="_ns)
+			set $namespace=ns
+			
+			set start=+$h-1, end=start
+			do ..Log("ComponentByDate. start="_start_" end="_end)
+			$$$THROWONERROR(tSC, ##class("Stats.Data.ComponentByDate").CalculateInterval(start,end))
+			
+			do ..Log("TotalByDate. start="_start_" end="_end)
+			$$$THROWONERROR(tSC, ##class("Stats.Data.TotalByDate").CalculateInterval(start,end))
+		}
+		do ..Log("*Stats End")
+	} catch ex {
+		set $namespace = current
+		set ret = ex.AsStatus()
+		do ..Log("<ERROR> OnTask: "_$system.Status.GetOneErrorText(ret))
+	}
+	set $namespace = current
+	quit ret
+]]></Implementation>
+</Method>
+
+<Method name="Log">
+<Description>
+Log a text message</Description>
+<FormalSpec><![CDATA[pText:%String,&pInfo]]></FormalSpec>
+<Implementation><![CDATA[
+	set tText = $zdt($h,3)_": "_pText
+	write !,tText
+	zwrite:$d(pInfo) pInfo
+]]></Implementation>
+</Method>
+</Class>
+</Export>

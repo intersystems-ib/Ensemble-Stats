@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Stats.Data.TotalByDate">
+<Description>
+Stats. Messages total sent/received by Ensemble production each day.</Description>
+<Super>%Persistent,Common</Super>
+<TimeCreated>63446,61008.755961</TimeCreated>
+
+<Parameter name="SrcVer">
+<Description>
+Location and Revision of this file in Perforce (Auto-updating)</Description>
+<Default>$Id$</Default>
+</Parameter>
+
+<Index name="Key">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>Namespace,SDate</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Index name="SDateIdx">
+<Properties>SDate</Properties>
+</Index>
+
+<Property name="Namespace">
+<Type>%String</Type>
+<SqlColumnNumber>2</SqlColumnNumber>
+<Parameter name="MAXLEN" value="1024"/>
+</Property>
+
+<Property name="SDate">
+<Type>%Date</Type>
+<SqlColumnNumber>3</SqlColumnNumber>
+</Property>
+
+<Property name="Sent">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Received">
+<Type>%Integer</Type>
+</Property>
+
+<Property name="Total">
+<Type>%Integer</Type>
+</Property>
+
+<Method name="Calculate">
+<Description>
+Calculate stats for a given date</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pDate:%Date</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ret = $$$OK
+	try {
+		set dateBegin = $zdate(pDate,3)
+		set dateEnd = $zdate(pDate+1,3)
+		set (sent, received) = ""
+		
+		// received messages
+		set type = ##class(Ens.DataType.MessageBusinessType).DisplayToLogical("BusinessService")
+		&sql(
+		DECLARE C1 CURSOR FOR
+		SELECT count(*) Num 
+		INTO :received
+		FROM Ens.MessageHeader
+		WHERE TimeCreated >= :dateBegin AND TimeCreated < :dateEnd
+		AND SourceBusinessType = :type
+		)
+		&sql(OPEN C1)
+		for {
+			&sql(FETCH C1)
+			quit:(SQLCODE'=0)
+			$$$THROWONERROR(tSC, ..AddStat($namespace, pDate, ,received))
+		}
+		&sql(CLOSE C1)
+		
+		// sent messages
+		set type = ##class(Ens.DataType.MessageBusinessType).DisplayToLogical("BusinessOperation")
+		&sql(
+		DECLARE C2 CURSOR FOR
+		SELECT count(*) Num 
+		INTO :sent
+		FROM Ens.MessageHeader
+		WHERE TimeCreated >= :dateBegin AND TimeCreated < :dateEnd
+		AND TargetBusinessType = :type
+		)
+		&sql(OPEN C2)
+		for {
+			&sql(FETCH C2)
+			quit:(SQLCODE'=0)
+			$$$THROWONERROR(tSC, ..AddStat($namespace, pDate, sent))
+		}
+		&sql(CLOSE C2)
+		
+	} catch ex {
+		set ret = ex.AsStatus()
+	}
+	quit ret
+]]></Implementation>
+</Method>
+
+<Method name="AddStat">
+<Description>
+Add a new stat to the persistent class</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pNamespace:%String="",pDate:%Date="",pSent:%String="",pRec:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ret = $$$OK
+	try {
+		set obj = ..KeyOpen(pNamespace, pDate)
+		if '$isobject(obj) {
+			set obj = ..%New()
+			set obj.Namespace = pNamespace
+			set obj.SDate = pDate
+		}
+		
+		if pSent'="" set obj.Sent = pSent
+		if pRec'="" set obj.Received = pRec
+		set obj.Total = obj.Sent + obj.Received
+		
+		$$$THROWONERROR(tSC, obj.%Save())
+	} catch ex {
+		set ret = ex.AsStatus()
+	}
+	quit ret
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^Stats.Data.TotalByDateD</DataLocation>
+<DefaultData>TotalByDateDefaultData</DefaultData>
+<IdLocation>^Stats.Data.TotalByDateD</IdLocation>
+<IndexLocation>^Stats.Data.TotalByDateI</IndexLocation>
+<StreamLocation>^Stats.Data.TotalByDateS</StreamLocation>
+<ExtentSize>100000</ExtentSize>
+<Data name="TotalByDateDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Sent</Value>
+</Value>
+<Value name="3">
+<Value>Received</Value>
+</Value>
+<Value name="4">
+<Value>Total</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Stats.KPI.Common">
+<Description>
+Common parent for KPI (SQL) to display Ensemble Stats.</Description>
+<Abstract>1</Abstract>
+<TimeCreated>63446,76156.18817</TimeCreated>
+
+<Parameter name="SrcVer">
+<Description>
+Location and Revision of this file in Perforce (Auto-updating)</Description>
+<Default>$Id$</Default>
+</Parameter>
+
+<Method name="ParseDate">
+<Description>
+Parse a date filter from the DeepSee user portal
+pFilter - Date filter expresssion
+pDayBegin - Date start period (in Cache date format) to use in SQL.
+pDayEnd - Date end period (in Cache date format) or empty if no end period to use in SQL.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pFilter:%Date,*pDayBegin,*pDayEnd</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ret = $$$OK
+	try {
+		set pDayBegin = +$h
+		set pDayEnd = ""
+		
+		if pFilter'="" {
+			set d=$tr(pFilter,"&[] ","")
+			set d=$replace(d,"%NOT","")
+			
+			// range
+			if $length(d,":")>1 {
+				set pDayBegin = $piece(d,":",1)
+				set pDayEnd = $piece(d,":",2)
+			}
+			// single date
+			else {
+				set pDayBegin = d
+			}
+		}
+	} catch {
+		set ret = ex.AsStatus()
+	}
+	quit ret
+]]></Implementation>
+</Method>
+
+<Method name="ParseString">
+<Description>
+Parse a string from the DeepSee user portal
+pFilter - String filter expression
+pString - Converted string to use in SQL</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pFilter:%String,*pString</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ret = $$$OK
+	try {
+		if pFilter'="" {
+			set pString=$tr(pFilter,"{}","")
+			set tmp=""
+			if $length(pString,",")>1 {
+				for i=1:1:$l(pString,",") set tmp=tmp_",'"_$p(pString,",",i)_"'"
+				set pString="("_$extract(tmp,2,$l(tmp))_")"
+			}
+		}
+	} catch ex {
+		set ret = ex.AsStatus()
+	}
+	quit ret
+]]></Implementation>
+</Method>
+</Class>
+</Export>
