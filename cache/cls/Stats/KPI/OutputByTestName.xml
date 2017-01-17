@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Stats.KPI.OutputByTestName">
+<Description>
+KPI to show total messages received/sent Ensemble production each day.</Description>
+<Super>%DeepSee.KPI,Common</Super>
+<TimeCreated>63440,60240.728841</TimeCreated>
+
+<Parameter name="SrcVer">
+<Description>
+Location and Revision of this file in Perforce (Auto-updating)</Description>
+<Default>$Id$</Default>
+</Parameter>
+
+<XData name="KPI">
+<XMLNamespace>http://www.intersystems.com/deepsee/kpi</XMLNamespace>
+<Data><![CDATA[
+<kpi name="OutputByTestName" sourceType="sql">
+<filter name="TestName" sql="select distinct %exact(TestName) from Stats_Data.InputByTime"/>
+
+<property name="Elapsed Time" columnNo="2" />
+</kpi>
+]]></Data>
+</XData>
+
+<Method name="%OnGetSQL">
+<FormalSpec><![CDATA[&pSQL:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	set ret = $$$OK
+	try {
+		set testName=""
+		$$$ThrowOnError(..ParseString(..%filterValues.TestName, .testName))
+		
+		// build SQL
+		set tFields = "SELECT BusinessPartner, AVG(PercentElapsedTime) AvgPercentElapsedTime "
+		set tFrom = "FROM Stats_Data.OutputByPartner"
+		set tWhere = ""
+		set tGroupBy = "GROUP BY TestName, BusinessPartner"
+		
+		if testName'="" {
+			if $l(testName,",")>1 {
+				set tWhere = tWhere_" WHERE TestName IN "_testName
+			} else {
+				set tWhere = tWhere_" WHERE TestName = '"_testName_"'"
+			}
+		}
+		
+		set pSQL = tFields_" "_tFrom_" "_tWhere_" "_tGroupBy
+   		set ^zdebug("KPI.OutputByTestName")=pSQL
+	} catch ex {
+		set ret = ex.AsStatus()
+	}
+   	quit ret
+]]></Implementation>
+</Method>
+</Class>
+</Export>

@@ -15,6 +15,7 @@
 <ul>
  	<li>0.1   - Initial version</li>
  	<li>0.2   - Fixed dashboard widget names. Added value labels in graphs.</li>
+	<li>0.3   - Added data, KPI and dashboard to analyze tests.</li>
 </ul>]]></Description>
 <Super>%RegisteredObject</Super>
 <TimeCreated>63451,62423.541472</TimeCreated>
