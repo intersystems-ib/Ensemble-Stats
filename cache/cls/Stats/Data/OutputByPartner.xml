@@ -63,11 +63,11 @@
 			set (timeFirst, timeLast, timeSession) = ""
 			
 			// get time of first message sent in session
-			&sql(SELECT TOP 1 TimeCreated INTO :timeFirst FROM Ens.MessageHeader WHERE SessionId=:sessionId ORDER BY TimeCreated ASC)
+			&sql(SELECT TOP 1 TimeCreated INTO :timeFirst FROM Ens.MessageHeader WHERE SessionId=:sessionId AND MessageBodyClassName NOT LIKE 'Ens.%' ORDER BY TimeCreated ASC)
 			set:SQLCODE'=0 timeFirst=""
 			
 			// get time of last message sent in session
-			&sql(SELECT TOP 1 TimeCreated INTO :timeLast FROM Ens.MessageHeader WHERE SessionId=:sessionId ORDER BY TimeCreated DESC)
+			&sql(SELECT TOP 1 TimeCreated INTO :timeLast FROM Ens.MessageHeader WHERE SessionId=:sessionId AND MessageBodyClassName NOT LIKE 'Ens.%' ORDER BY TimeCreated DESC)
 			set:SQLCODE'=0 timeLast=""
 			
 			// calculate total time elapsed in session
