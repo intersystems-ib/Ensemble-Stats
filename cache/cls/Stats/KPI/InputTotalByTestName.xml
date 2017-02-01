@@ -20,6 +20,7 @@ Location and Revision of this file in Perforce (Auto-updating)</Description>
 
 <property name="TotalMessages" columnNo="2" />
 <property name="TotalTime" columnNo="3" />
+<property name="AvgMsg" columnNo="4" />
 </kpi>
 ]]></Data>
 </XData>
@@ -34,7 +35,7 @@ Location and Revision of this file in Perforce (Auto-updating)</Description>
 		$$$ThrowOnError(..ParseString(..%filterValues.TestName, .testName))
 		
 		// build SQL
-		set tFields = "SELECT 'Total', SUM(Messages), DATEDIFF('s', MIN(TimeCreated), MAX(TimeCreated)) "
+		set tFields = "SELECT 'Total', SUM(Messages), DATEDIFF('s', MIN(TimeCreated), MAX(TimeCreated)), CAST(AVG(Messages) AS DEC(3,5)) "
 		set tFrom = "FROM Stats_Data.InputByTime"
 		set tWhere = ""
 		set tGroupBy = ""
