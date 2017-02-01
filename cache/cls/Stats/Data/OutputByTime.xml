@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="Cache" version="25">
-<Class name="Stats.Data.InputByTime">
+<Class name="Stats.Data.OutputByTime">
 <IncludeCode>Ensemble</IncludeCode>
 <Super>%Persistent</Super>
 <TimeCreated>64296,44322.823298</TimeCreated>
@@ -33,9 +33,6 @@
 		set timeBegin = pTimeBegin
 		set timeEnd = pTimeEnd
 		
-		set typeBP = ##class(Ens.DataType.MessageBusinessType).DisplayToLogical("BusinessProcess")
-		set typeBO = ##class(Ens.DataType.MessageBusinessType).DisplayToLogical("BusinessOperation")
-		
 		// query in ODBC mode, so TimeCreated is considered in local time
 		#SQLCompile Select=ODBC
 		
@@ -45,9 +42,9 @@
 		$EXTRACT(TimeCreated, 1, 19), COUNT(id)
 		INTO :timeCreated, :countByTime
 		FROM Ens.MessageHeader
-		WHERE SourceConfigName %INLIST :hostList
+		WHERE TargetConfigName %INLIST :hostList
 		and TimeCreated BETWEEN :timeBegin AND :timeEnd
-		AND TargetBusinessType IN (:typeBP, :typeBO)
+		and MessageBodyClassName NOT LIKE 'Ens.%'
 		GROUP BY $EXTRACT(TimeCreated, 1, 19)
 		)
 		&sql(OPEN C1)
@@ -74,12 +71,14 @@
 
 <Storage name="Default">
 <Type>%Library.CacheStorage</Type>
-<DataLocation>^Stats.Data.InputByTimeD</DataLocation>
-<DefaultData>InputByTimeDefaultData</DefaultData>
-<IdLocation>^Stats.Data.InputByTimeD</IdLocation>
-<IndexLocation>^Stats.Data.InputByTimeI</IndexLocation>
-<StreamLocation>^Stats.Data.InputByTimeS</StreamLocation>
-<Data name="InputByTimeDefaultData">
+<DataLocation>^Stats.Data.OutputByTimeD</DataLocation>
+<DefaultData>OutputByTimeDefaultData</DefaultData>
+<IdLocation>^Stats.Data.OutputByTimeD</IdLocation>
+<IndexLocation>^Stats.Data.OutputByTimeI</IndexLocation>
+<StreamLocation>^Stats.Data.OutputByTimeS</StreamLocation>
+<Data name="OutputByTimeDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

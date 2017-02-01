@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="Cache" version="25">
-<Class name="Stats.KPI.OutputTotalByTestName">
+<Class name="Stats.KPI.ProcessingTimeByTestName">
 <Description>
 KPI to show total messages received/sent Ensemble production each day.</Description>
 <Super>%DeepSee.KPI,Common</Super>
@@ -15,11 +15,10 @@ Location and Revision of this file in Perforce (Auto-updating)</Description>
 <XData name="KPI">
 <XMLNamespace>http://www.intersystems.com/deepsee/kpi</XMLNamespace>
 <Data><![CDATA[
-<kpi name="OutputTotalByTestName" sourceType="sql">
+<kpi name="ProcessingTimeByTestName" sourceType="sql">
 <filter name="TestName" sql="select distinct %exact(TestName) from Stats_Data.InputByTime"/>
 
-<property name="TotalMessages" columnNo="2" />
-<property name="TotalTime" columnNo="3" />
+<property name="ElapsedTime" columnNo="2" />
 </kpi>
 ]]></Data>
 </XData>
@@ -33,23 +32,24 @@ Location and Revision of this file in Perforce (Auto-updating)</Description>
 		set testName=""
 		$$$ThrowOnError(..ParseString(..%filterValues.TestName, .testName))
 		
-		// build SQL
-		set tFields = "SELECT 'Total', SUM(Messages), DATEDIFF('s', MIN(TimeCreated), MAX(TimeCreated)) "
-		set tFrom = "FROM Stats_Data.OutputByTime"
-		set tWhere = ""
-		set tGroupBy = ""
+		if ((testName="") || ($l(testName,",")>1)) $$$ThrowStatus($$$ERROR($$$GeneralError, "Testname filter required"))
 		
-		if testName'="" {
-			if $l(testName,",")>1 {
-				set tWhere = tWhere_" WHERE TestName IN "_testName
-			} else {
-				set tWhere = tWhere_" WHERE TestName = '"_testName_"'"
-			}
-		}
+		// build SQL
+		set tSQL = 
+				"SELECT t.range, COUNT(*) / (SELECT COUNT(distinct(SessionId)) FROM Stats_Data.OutputByPartner WHERE testname='"_testName_"')"_
+				"FROM "_
+		        "(SELECT sessionid, "_
+ 			    " CASE WHEN sum(elapsedtime) < 1 THEN '0-1 s' "_
+ 				" WHEN sum(elapsedtime) >= 1 AND sum(elapsedtime) <= 2 THEN '1-2 s' "_
+ 				" ELSE '2+ s' END as range "_
+ 				" FROM Stats_Data.OutputByPartner "_
+ 				" WHERE testname='"_testName_"'"_
+				" GROUP BY SessionId) t "_
+				"GROUP BY t.range"
    		
-   		set pSQL = tFields_" "_tFrom_" "_tWhere_" "_tGroupBy
+   		set pSQL = tSQL
    		
-   		set ^zdebug("KPI.OutputTotalByTestName")=pSQL
+   		set ^zdebug("KPI.ProcessingTimeByTestName")=pSQL
 	} catch ex {
 		set ret = ex.AsStatus()
 	}

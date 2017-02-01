@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="Cache" version="25">
-<Class name="Stats.KPI.InputByTestName">
+<Class name="Stats.KPI.ProcessingTotalByTestName">
 <Description>
 KPI to show total messages received/sent Ensemble production each day.</Description>
 <Super>%DeepSee.KPI,Common</Super>
@@ -15,10 +15,10 @@ Location and Revision of this file in Perforce (Auto-updating)</Description>
 <XData name="KPI">
 <XMLNamespace>http://www.intersystems.com/deepsee/kpi</XMLNamespace>
 <Data><![CDATA[
-<kpi name="InputByTestName" sourceType="sql">
-<filter name="TestName" sql="select distinct %exact(TestName) from Stats_Data.InputByTime UNION select distinct %exact(TestName) from Stats_Data.OutputByPartner"/>
+<kpi name="ProcessingTotalByTestName" sourceType="sql">
+<filter name="TestName" sql="select distinct %exact(TestName) from Stats_Data.InputByTime"/>
 
-<property name="Messages" columnNo="2" />
+<property name="AvgSessionTime" columnNo="2" />
 </kpi>
 ]]></Data>
 </XData>
@@ -33,8 +33,8 @@ Location and Revision of this file in Perforce (Auto-updating)</Description>
 		$$$ThrowOnError(..ParseString(..%filterValues.TestName, .testName))
 		
 		// build SQL
-		set tFields = "SELECT $PIECE(TimeCreated, ' ', 2), Messages"
-		set tFrom = "FROM Stats_Data.InputByTime"
+		set tFields = "SELECT 'Total', CAST(AVG(ElapsedTime)/AVG(PercentElapsedTime) AS DEC(3,5)) AvgSessionTime "
+		set tFrom = "FROM Stats_Data.OutputByPartner"
 		set tWhere = ""
 		set tGroupBy = ""
 		
@@ -48,7 +48,7 @@ Location and Revision of this file in Perforce (Auto-updating)</Description>
    		
    		set pSQL = tFields_" "_tFrom_" "_tWhere_" "_tGroupBy
    		
-   		set ^zdebug("KPI.InputByTestName")=pSQL
+   		set ^zdebug("KPI.ProcessingTotalByTestName")=pSQL
 	} catch ex {
 		set ret = ex.AsStatus()
 	}
