@@ -28,24 +28,24 @@
 	set ret = $$$OK
 	try {
 		set hostList = pHostList
-		set (timeCreated, countByTime)=""
+		set (timeProcessed, countByTime)=""
 		
 		set timeBegin = pTimeBegin
 		set timeEnd = pTimeEnd
 		
-		// query in ODBC mode, so TimeCreated is considered in local time
+		// query in ODBC mode, so TimeProcessed is considered in local time
 		#SQLCompile Select=ODBC
 		
 		&sql(
 		DECLARE C1 CURSOR FOR
 		SELECT
-		$EXTRACT(TimeCreated, 1, 19), COUNT(id)
-		INTO :timeCreated, :countByTime
+		$EXTRACT(TimeProcessed, 1, 19), COUNT(id)
+		INTO :timeProcessed, :countByTime
 		FROM Ens.MessageHeader
 		WHERE TargetConfigName %INLIST :hostList
-		and TimeCreated BETWEEN :timeBegin AND :timeEnd
+		and TimeProcessed BETWEEN :timeBegin AND :timeEnd
 		and MessageBodyClassName NOT LIKE 'Ens.%'
-		GROUP BY $EXTRACT(TimeCreated, 1, 19)
+		GROUP BY $EXTRACT(TimeProcessed, 1, 19)
 		)
 		&sql(OPEN C1)
 		for {
@@ -55,7 +55,7 @@
 			set obj = ..%New()
 			
 			// store local time in the stats table
-			set obj.TimeCreated = ##class(Ens.DataType.UTC).timeUTCtoLocal(timeCreated)
+			set obj.TimeCreated = ##class(Ens.DataType.UTC).timeUTCtoLocal(timeProcessed)
 			set obj.Messages = countByTime
 			set obj.TestName = pTestName
 			
@@ -77,8 +77,6 @@
 <IndexLocation>^Stats.Data.OutputByTimeI</IndexLocation>
 <StreamLocation>^Stats.Data.OutputByTimeS</StreamLocation>
 <Data name="OutputByTimeDefaultData">
-<Structure>listnode</Structure>
-<Subscript/>
 <Value name="1">
 <Value>%%CLASSNAME</Value>
 </Value>

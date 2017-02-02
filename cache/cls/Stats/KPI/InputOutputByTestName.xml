@@ -34,16 +34,16 @@ Location and Revision of this file in Perforce (Auto-updating)</Description>
 		$$$ThrowOnError(..ParseString(..%filterValues.TestName, .testName))
 		
 		// build SQL
-		set tFields = "SELECT $PIECE(i.timecreated, ' ', 2), i.messages as ninput, o.messages as noutput "
-		set tFrom = "FROM stats_data.inputbytime i full outer join stats_data.outputbytime o on i.testname=o.testname and i.timecreated=o.timecreated "
+		set tFields = "SELECT ISNULL(i.timecreated,o.timecreated), ISNULL(i.messages,0) as ninput, ISNULL(o.messages,0) as noutput "
+		set tFrom = "FROM Stats_Data.OutputByTime o FULL OUTER JOIN Stats_Data.InputByTime i ON o.timecreated=i.timecreated AND o.testname=i.testname"
 		set tWhere = ""
 		set tGroupBy = ""
 		
 		if testName'="" {
 			if $l(testName,",")>1 {
-				set tWhere = tWhere_" WHERE i.TestName IN "_testName
+				set tWhere = tWhere_" WHERE o.TestName IN "_testName
 			} else {
-				set tWhere = tWhere_" WHERE i.TestName = '"_testName_"'"
+				set tWhere = tWhere_" WHERE o.TestName = '"_testName_"'"
 			}
 		}
    		
